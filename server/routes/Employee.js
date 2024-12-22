@@ -3,7 +3,7 @@ const router = express.Router();
 const { Employees } = require("../models");
 const { Op } = require("sequelize");
 
-// Get all employees
+//get all employee
 router.get("/", async (req, res) => {
   try {
     const listOfEmp = await Employees.findAll();
@@ -13,31 +13,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Search employees based on a search term
-router.get("/search", async (req, res) => {
-  const searchTerm = req.query.search || ""; // Get search term from query params
 
-  try {
-    const employees = await Employees.findAll({
-      where: {
-        [Op.or]: [
-          { name: { [Op.like]: `%${searchTerm}%` } },
-          { employeeId: { [Op.like]: `%${searchTerm}%` } },
-          { email: { [Op.like]: `%${searchTerm}%` } },
-          { department: { [Op.like]: `%${searchTerm}%` } },
-          { role: { [Op.like]: `%${searchTerm}%` } },
-          { phoneNumber: { [Op.like]: `%${searchTerm}%` } }
-        ]
-      }
-    });
-
-    res.json(employees);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-// Add a new employee
+//create employee rec
 router.post("/", async (req, res) => {
   const emp = req.body;
 
@@ -66,7 +43,8 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Delete an employee by ID
+
+//del emp
 router.delete("/:id", async (req, res) => {
   const employeeId = req.params.id;
 
@@ -83,22 +61,52 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.put('/employee/:id', async (req, res) => {
-  const { id } = req.params;
-  const updatedData = req.body;
 
+//update emp details
+router.get('/:id', async (req, res) => {
+  const {id} = req.params;
   try {
     const employee = await Employees.findByPk(id);
-    if (!employee) {
-      return res.status(404).json({ message: 'Employee not found' });
+    if (!employee) return res.status(404).json({ message: 'Employee not found' });
+    res.status(200).json(employee);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+//edit
+router.put('/:id', async (req, res) => {
+  const {id} = req.params;
+  const emp = req.body;
+  try {
+    const updatedEmployee = await Employees.update(emp, {where: { id: id }});
+
+    if (updatedEmployee[0] === 0) {
+      return res.status(404).json({ message:"Employee not found" });
     }
 
-    // Update employee details
-    await employee.update(updatedData);
-    res.status(200).json({ message: 'Employee updated successfully', data: employee });
+    res.status(200).json({ message:"Employee updated successfully" });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
+});
+
+
+
+//search for a emp
+router.get("/search/:code", async (req, res) => {
+  const employeeId = req.query.code; 
+    const employee = await Employees.findOne({
+      where: { employeeId: employeeId } 
+    });
+    res.json({
+      name: employee.name,
+      employeeId: employee.employeeId,
+      email:employee.email,
+      phoneNumber:employee.phoneNumber,
+      department:employee.department,
+      role:employee.role
+    });
 });
 
 module.exports = router;
